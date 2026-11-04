@@ -33,6 +33,7 @@ O Clawd é instalado em `%LOCALAPPDATA%\Clawd`, ganha um atalho no menu Iniciar 
 - **Conversa:** dê dois cliques nele pra conversar. Ele lembra das conversas anteriores.
 - **Espia a tela:** de vez em quando ele comenta o que você está fazendo (vídeo, código, jogo).
 - **Atividades espontâneas:** pega um controle quando você está jogando, abre um notebook quando você está programando, pesca em cima das janelas, constrói casinhas de blocos, joga bola, toma café, lê um livro.
+- **32 truques aleatórios:** bola de chiclete que estoura na cara, raio que deixa ele tostado, clone em cima da cabeça, jetpack, paraquedas do topo da tela, breakdance de ponta-cabeça, mágica do coelho, pintar um quadro, DJ, toc toc que racha a tela... Dá pra ver todos no menu **Truques** (ou **Surpresa!**).
 - **Envelhece:** se o PC ficar parado, ele fica velhinho, morre, vira um fantasminha e uma lápide aparece. Quando você mexer no mouse, ele revive.
 - **Some sozinho** quando algum app entra em tela cheia.
 

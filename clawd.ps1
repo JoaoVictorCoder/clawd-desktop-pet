@@ -445,6 +445,7 @@ function Update-Bubble {
     $area = Get-Area
     $cx = $S.sx + $SW / 2
     $top = $S.sy - 2 * $PX
+    if ($S.state -eq 'trick' -and $S.trk -and $TRK[$S.trk.name].above) { $top = $S.sy - ($TRK[$S.trk.name].above + 1) * $PX }   # acima da nuvem, do clone...
     if ($S.ghostOn) { $cx = $S.sx + ($S.gx - $OX + 5) * $PX; $top = $S.sy + ($S.gy - $OY - 1) * $PX }   # fala o fantasminha
     $x = [int]($cx - $Balloon.w / 2)
     $x = [Math]::Max($area.Left + 4, [Math]::Min($x, $area.Right - $Balloon.w - 4))
@@ -659,6 +660,7 @@ function Get-Expr {
     if ($S.drag -and $S.moved) { return $S.dragMood }
     if ($S.moodT -gt 0) { return $S.mood }
     if ($S.state -eq 'act' -and $S.actExpr) { return $S.actExpr }
+    if ($S.state -eq 'trick' -and $S.trk -and $S.trk.expr) { return $S.trk.expr }
     if ($Chat.busy) { return 'thinking' }
     if ($S.energy -lt 20) { return 'sleepy' }
     if ($S.social -lt 25) { return 'sad' }
@@ -772,9 +774,11 @@ function Get-Sprite([string]$force) {
     }
 
     if ($S.state -eq 'act') { Set-ActPose $grid }
+    $trick = $null
+    if ($S.state -eq 'trick') { $trick = $S.trk; Set-TrickPose $grid }
 
     $lifted = @()
-    if (-not $held -and (@('walk', 'run', 'seek', 'goto', 'dance') -contains $S.state -or ($S.state -eq 'act' -and $S.actWalk))) {
+    if (-not $held -and (@('walk', 'run', 'seek', 'goto', 'dance') -contains $S.state -or ($S.state -eq 'act' -and $S.actWalk) -or ($trick -and $trick.walk))) {
         if ($S.frame -eq 0) { $lifted = 5, 14 } else { $lifted = 3, 12 }
     }
     foreach ($c in 3, 5, 12, 14) {
@@ -782,10 +786,11 @@ function Get-Sprite([string]$force) {
         if ($lifted -notcontains $c) { $grid[9][$c] = 'O' }
     }
 
-    if ($S.state -eq 'sleep' -or $S.state -eq 'crouch' -or $S.squash -gt 0 -or $S.age -ge 0.6 -or ($S.state -eq 'act' -and $S.actSit)) {
+    if ($S.state -eq 'sleep' -or $S.state -eq 'crouch' -or $S.squash -gt 0 -or $S.age -ge 0.6 -or ($S.state -eq 'act' -and $S.actSit) -or ($trick -and $trick.sit)) {
         for ($r = $ROWS - 1; $r -gt 0; $r--) { $grid[$r] = $grid[$r - 1] }
         $grid[0] = ('.' * $COLS).ToCharArray()
     }
+    if ($trick -and $trick.flip) { [array]::Reverse($grid) }   # de ponta-cabeca
     return $grid
 }
 
@@ -806,9 +811,12 @@ $form.Add_Paint({
         $gr = $e.Graphics
         $grid = Get-Sprite
         $body = $AGEBR[[int][Math]::Round($S.age * 10)]
+        $trick = $null; if ($S.state -eq 'trick') { $trick = $S.trk }
+        if ($trick -and $trick.dark) { $body = $BR['E'] }   # tostado pelo raio
         $shx = $OX
         if (($S.state -eq 'dead' -and $S.deadT -lt 30) -or ($S.state -eq 'revive' -and $S.deadT -ge 25)) { $shx += ($S.tick % 2) * 2 - 1 }   # tremedeira
-        for ($r = 0; $r -lt $ROWS; $r++) {
+        $nrows = $ROWS; if ($trick -and $trick.hide) { $nrows = 0 }
+        for ($r = 0; $r -lt $nrows; $r++) {
             $row = $grid[$r]
             for ($c = 0; $c -lt $COLS; $c++) {
                 $ch = $row[$c]
@@ -817,6 +825,7 @@ $form.Add_Paint({
             }
         }
         Draw-ActProps $gr
+        Draw-TrickProps $gr $grid
         foreach ($p in $Parts) { Draw-Pattern $gr $PAT[$p.k] $p.x $p.y }
         if ($S.ghostOn) { Draw-Pattern $gr $PAT.ghost $S.gx $S.gy }
         if ((Get-Expr) -eq 'dizzy') {
@@ -867,6 +876,7 @@ function Start-Climb {
 function Pick-State {
     if ($S.age -gt 0.5) { if ($rand.Next(100) -lt 55) { Set-State 'walk' } else { Set-State 'idle' }; return }   # velhinho nao pula
     if ($S.energy -lt 15) { Set-State 'sleep'; Say (Line 'sono'); return }
+    if (Try-StartTrick) { return }
     if (Try-StartActivity) { return }
     if ($S.social -lt 25 -and $rand.Next(100) -lt 45) {
         Set-State 'seek'
@@ -938,6 +948,7 @@ function Step-Behavior {
             if ($S.tick % 24 -eq 0) { Invoke-Jump (-4 * $dpi) }
         }
         'wave' { if ($S.tick % 7 -eq 0) { $S.frame = 1 - $S.frame } }
+        'trick' { return }   # o truque roda no Step-Trick
         'act' {
             if ($S.actWalk -and $S.tick % 4 -eq 0) { $S.frame = 1 - $S.frame }
             Step-Activity
@@ -1033,7 +1044,7 @@ $form.Add_MouseMove({
     $S.last = $p
     if (-not $S.moved -and [Math]::Abs($p.X - $S.down.X) + [Math]::Abs($p.Y - $S.down.Y) -gt 4) {
         $S.moved = $true; $S.plat = [IntPtr]::Zero; $S.pr = $null
-        if ($S.state -eq 'sleep' -or $S.state -eq 'act') { $S.act = $null; Set-State 'idle' }
+        if ($S.state -eq 'sleep' -or $S.state -eq 'act' -or $S.state -eq 'trick') { $S.act = $null; $S.trk = $null; Set-State 'idle' }
         if ($rand.Next(100) -lt 45) { Say (Line 'carregado') }
     }
     if ($S.moved) {
@@ -1088,6 +1099,7 @@ $menu.Items.Add('Sair').Add_Click({ $form.Close() }) | Out-Null
 $form.ContextMenuStrip = $menu
 
 . (Join-Path $here 'atividades.ps1')
+. (Join-Path $here 'truques.ps1')
 
 # ---------- velhice e morte (PC parado) ----------
 function Step-Aging {
@@ -1157,6 +1169,7 @@ function Step-Tick {
     if ($S.squash -gt 0) { $S.squash-- }
     if ($S.pendingClick -gt 0) { $S.pendingClick--; if ($S.pendingClick -eq 0) { Invoke-Poke } }
     Step-Aging
+    if ($S.state -eq 'trick' -and -not $S.drag) { Step-Trick }
 
     # necessidades
     if ($t % 100 -eq 0) {
@@ -1267,7 +1280,8 @@ function Step-Tick {
     }
 
     # para onde olhar
-    if ($S.state -eq 'act' -and $null -ne $S.actLook) { $S.look = $S.actLook; $S.lookY = 0 }
+    if ($S.state -eq 'trick' -and $S.trk -and $null -ne $S.trk.look) { $S.look = $S.trk.look; $S.lookY = 0 }
+    elseif ($S.state -eq 'act' -and $null -ne $S.actLook) { $S.look = $S.actLook; $S.lookY = 0 }
     elseif (@('walk', 'run', 'seek', 'goto') -contains $S.state) { $S.look = $S.dir; $S.lookY = 0 }
     else {
         $cur = [System.Windows.Forms.Cursor]::Position

@@ -10,7 +10,7 @@ $ErrorActionPreference = 'Stop'
 $Repo = 'JoaoVictorCoder/clawd-desktop-pet'
 $Branch = 'main'
 $dest = Join-Path $env:LOCALAPPDATA 'Clawd'
-$files = 'clawd.ps1', 'atividades.ps1', 'falas.json', 'persona.txt', 'iniciar.vbs', 'desinstalar.ps1'
+$files = 'clawd.ps1', 'atividades.ps1', 'truques.ps1', 'falas.json', 'persona.txt', 'iniciar.vbs', 'desinstalar.ps1'
 
 Write-Host ''
 Write-Host '  Instalando o Clawd...' -ForegroundColor Yellow
