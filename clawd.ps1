@@ -1,5 +1,5 @@
 # Clawd - companion pixelado que anda na barra de tarefas, sobe nas janelas,
-# conversa (via Claude Code) e tem emocoes.
+# conversa (via Claude Code ou outra IA) e tem emocoes.
 #
 # Clique: cutucar | Duplo clique: conversar | Arrastar: carregar/arremessar
 # Passar o mouse em cima dele: carinho | Botao direito: menu
@@ -341,27 +341,61 @@ $S = @{
 }
 $Parts = New-Object System.Collections.ArrayList   # particulas
 $Balloon = @{ active = $false; text = ''; shown = 0; life = 0; prio = 0; hold = $false; w = 10; boxH = 10; tail = 10 }
-$Chat = @{ busy = $false; proc = $null; out = $null; err = $null; start = 0; exe = $null; kind = 'chat'; img = $null; hist = New-Object System.Collections.ArrayList }
+$Chat = @{ busy = $false; proc = $null; out = $null; err = $null; start = 0; exe = $null; kind = 'chat'; img = $null; http = $null; hist = New-Object System.Collections.ArrayList }
 
 # config: ver = manda print da janela ativa nas conversas; espiar = comenta sozinho o que ve
 $cfgPath = Join-Path $here 'config.json'
 # envelhecer = envelhece e morre com o PC parado; morte_min = minutos parado ate morrer
-$CFG = @{ ver = $true; espiar = $true; envelhecer = $true; morte_min = 10 }
+# ia = qual IA usar nas conversas (claude, openai, gemini, ollama, lmstudio, openrouter, groq, deepseek ou outra)
+# ia_url / ia_chave / ia_modelo = endereco, chave e modelo da API; ia_imagem = manda o print pra IA
+$CFG = @{ ver = $true; espiar = $true; envelhecer = $true; morte_min = 10; ia = 'claude'; ia_url = ''; ia_chave = ''; ia_modelo = ''; ia_imagem = $true }
 if (Test-Path $cfgPath) {
     try {
         $j = Get-Content $cfgPath -Raw | ConvertFrom-Json
-        foreach ($k in 'ver', 'espiar', 'envelhecer') { if ($null -ne $j.$k) { $CFG[$k] = [bool]$j.$k } }
+        foreach ($k in 'ver', 'espiar', 'envelhecer', 'ia_imagem') { if ($null -ne $j.$k) { $CFG[$k] = [bool]$j.$k } }
+        foreach ($k in 'ia', 'ia_url', 'ia_chave', 'ia_modelo') { if ($j.$k) { $CFG[$k] = [string]$j.$k } }
         if ($j.morte_min -gt 0) { $CFG.morte_min = [double]$j.morte_min }
     } catch {}
 }
 function Save-Config { try { $CFG | ConvertTo-Json | Set-Content -Path $cfgPath -Encoding UTF8 } catch {} }
 
-# Claude Code e opcional: sem ele o Clawd so usa as falas prontas
+# outras IAs: qualquer API compativel com a da OpenAI (/chat/completions)
+# preset = url padrao, modelo padrao, variavel de ambiente da chave, aceita imagem
+$IA_PRESETS = @{
+    openai     = @('https://api.openai.com/v1', 'gpt-4.1-mini', 'OPENAI_API_KEY', $true)
+    gemini     = @('https://generativelanguage.googleapis.com/v1beta/openai', 'gemini-2.5-flash', 'GEMINI_API_KEY', $true)
+    ollama     = @('http://localhost:11434/v1', 'gemma3', '', $true)
+    lmstudio   = @('http://localhost:1234/v1', 'local-model', '', $true)
+    openrouter = @('https://openrouter.ai/api/v1', 'openai/gpt-4.1-mini', 'OPENROUTER_API_KEY', $true)
+    groq       = @('https://api.groq.com/openai/v1', 'meta-llama/llama-4-scout-17b-16e-instruct', 'GROQ_API_KEY', $true)
+    deepseek   = @('https://api.deepseek.com/v1', 'deepseek-chat', 'DEEPSEEK_API_KEY', $false)
+}
+$AI = @{ http = $CFG.ia -ne 'claude'; url = $CFG.ia_url; key = $CFG.ia_chave; model = $CFG.ia_modelo; img = $CFG.ia_imagem }
+$pre = $IA_PRESETS[$CFG.ia.ToLower()]
+if ($AI.http -and $pre) {
+    if (-not $AI.url) { $AI.url = $pre[0] }
+    if (-not $AI.model) { $AI.model = $pre[1] }
+    if (-not $AI.key -and $pre[2]) { $AI.key = [Environment]::GetEnvironmentVariable($pre[2]) }
+    if (-not $pre[3]) { $AI.img = $false }
+}
+if ($AI.http) {
+    Add-Type -AssemblyName System.Net.Http
+    [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
+    $Http = New-Object System.Net.Http.HttpClient
+    $Http.Timeout = [TimeSpan]::FromSeconds(90)
+    $PERSONA = Get-Content (Join-Path $here 'persona.txt') -Raw -Encoding UTF8
+    if (-not $AI.url) { $AI.http = $false; Write-Log ("ia '" + $CFG.ia + "' sem ia_url no config.json") }
+}
+
+# Claude Code e opcional: sem ele (e sem outra IA) o Clawd so usa as falas prontas
 $claudeCands = @(Get-Command claude -CommandType Application -ErrorAction SilentlyContinue | ForEach-Object { $_.Source }) +
     @("$env:LOCALAPPDATA\Microsoft\WinGet\Links\claude.exe", "$HOME\.local\bin\claude.exe", "$env:APPDATA\npm\claude.cmd")
-foreach ($cand in $claudeCands) {
-    if ($cand -and (Test-Path $cand)) { $Chat.exe = $cand; break }
+if ($CFG.ia -eq 'claude') {
+    foreach ($cand in $claudeCands) {
+        if ($cand -and (Test-Path $cand)) { $Chat.exe = $cand; break }
+    }
 }
+function Test-AI { $AI.http -or $Chat.exe }
 $memPath = Join-Path $here 'memoria.json'
 if (Test-Path $memPath) {
     try { foreach ($h in @(Get-Content $memPath -Raw -Encoding UTF8 | ConvertFrom-Json)) { [void]$Chat.hist.Add(@{ r = $h.r; t = $h.t }) } } catch {}
@@ -536,7 +570,7 @@ function Start-Chat([string]$msg) {
 }
 
 function Start-Peek {
-    if (-not $Chat.exe) { return }
+    if (-not (Test-AI) -or ($AI.http -and -not $AI.img)) { return }
     $img = Get-Snapshot 512
     if (-not $img) { return }
     $prompt = (Get-Context) + "`nEspiou a tela (print). Comente. Nao repita: " + ((Get-Recent 2) -join ' / ')
@@ -545,10 +579,11 @@ function Start-Peek {
 
 function Invoke-Claude([string]$prompt, [string]$img, [string]$kind) {
     $Chat.kind = $kind
-    if (-not $Chat.exe) {
+    if (-not (Test-AI)) {
         if ($kind -eq 'chat') { $Balloon.prio = 0; Say (Line 'sem_claude_instalado') 3; Set-Mood 'sad' 60 }
         return
     }
+    if ($AI.http) { Invoke-Http $prompt $img; return }
     $content = @()
     if ($img) { $content += @{ type = 'image'; source = @{ type = 'base64'; media_type = 'image/jpeg'; data = $img } } }
     $content += @{ type = 'text'; text = $prompt }
@@ -582,6 +617,34 @@ function Invoke-Claude([string]$prompt, [string]$img, [string]$kind) {
     }
 }
 
+# outras IAs: POST /chat/completions sem travar a animacao (o Step-Chat espera a resposta)
+function Invoke-Http([string]$prompt, [string]$img) {
+    $content = @(@{ type = 'text'; text = $prompt })
+    if ($img -and $AI.img) { $content += @{ type = 'image_url'; image_url = @{ url = 'data:image/jpeg;base64,' + $img } } }
+    $body = @{ model = $AI.model; messages = @(@{ role = 'system'; content = $PERSONA }, @{ role = 'user'; content = $content }) } | ConvertTo-Json -Depth 8 -Compress
+    try {
+        $req = New-Object System.Net.Http.HttpRequestMessage ([System.Net.Http.HttpMethod]::Post), ($AI.url.TrimEnd('/') + '/chat/completions')
+        $req.Content = New-Object System.Net.Http.StringContent ($body, [System.Text.Encoding]::UTF8, 'application/json')
+        if ($AI.key) { $req.Headers.Authorization = New-Object System.Net.Http.Headers.AuthenticationHeaderValue ('Bearer', $AI.key) }
+        $Chat.http = $Http.SendAsync($req)
+        $Chat.start = $S.tick; $Chat.busy = $true
+        if ($Chat.kind -eq 'chat') { Say '...' 3 -Hold }
+    } catch {
+        Finish-Chat '' $_.ToString()
+    }
+}
+
+function Get-HttpText($t) {
+    if ($t.IsFaulted -or $t.IsCanceled) {
+        $e = 'cancelado'; if ($t.Exception) { $e = $t.Exception.GetBaseException().Message }
+        return @('', $e)
+    }
+    $r = $t.Result
+    $s = $r.Content.ReadAsStringAsync().Result
+    if (-not $r.IsSuccessStatusCode) { return @('', ('http ' + [int]$r.StatusCode + ': ' + $s)) }
+    try { return @([string]($s | ConvertFrom-Json).choices[0].message.content, '') } catch { return @('', $s) }
+}
+
 function Get-ResultText([string]$out) {
     foreach ($l in ($out -split "`n")) {
         if ($l -match '"type"\s*:\s*"result"') {
@@ -595,7 +658,14 @@ function Get-ResultText([string]$out) {
 
 function Step-Chat {
     if (-not $Chat.busy) { return }
-    if ($Chat.proc.HasExited -and $Chat.out.IsCompleted) {
+    if ($Chat.http -and $Chat.http.IsCompleted) {
+        $res = Get-HttpText $Chat.http
+        $Chat.http = $null
+        Finish-Chat $res[0] $res[1]
+    } elseif ($Chat.http) {
+        if ($S.tick - $Chat.start -gt 2500) { $Chat.http = $null; Finish-Chat '' 'timeout' }
+        elseif ($Chat.kind -eq 'chat' -and $S.tick % 12 -eq 0) { $Balloon.text = '.' * (1 + ($S.tick / 12) % 3); $Balloon.shown = 3; $bub.Invalidate() }
+    } elseif ($Chat.proc.HasExited -and $Chat.out.IsCompleted) {
         $out = $Chat.out.Result; $err = ''
         if ($Chat.err.IsCompleted) { $err = $Chat.err.Result }
         $Chat.busy = $false
@@ -615,9 +685,10 @@ $EMO = @{ feliz = 'happy'; amor = 'love'; triste = 'sad'; bravo = 'angry'; surpr
 function Finish-Chat([string]$out, [string]$err) {
     $Chat.busy = $false
     $txt = ''
-    if ($out) { $txt = $out.Trim() }
+    # modelos que "pensam" alto (deepseek-r1, qwen3...) mandam o raciocinio entre <think>
+    if ($out) { $txt = ($out -replace '(?s)<think>.*?</think>', '').Trim() }
     if (-not $txt) {
-        if ($err) { Write-Log ("claude: " + $err) }
+        if ($err) { Write-Log ($CFG.ia + ": " + $err) }
         if ($Chat.kind -eq 'peek') { return }
         $Balloon.prio = 0; Say (Line 'sem_claude') 3; Set-Mood 'sad' 60
         return

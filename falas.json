@@ -103,7 +103,7 @@
   },
 
   "ocupado": ["Calma, tô pensando!", "Um de cada vez!"],
-  "sem_claude_instalado": ["Instala o Claude Code pra eu conversar!"],
+  "sem_claude_instalado": ["Instala o Claude Code (ou configura outra IA) pra eu conversar!"],
   "sem_claude": ["Deu tilt...", "Não consegui pensar."],
   "esqueci": ["Ué... esqueci tudo!"],
 

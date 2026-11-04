@@ -63,5 +63,6 @@ if (-not (Get-Command claude -CommandType Application -ErrorAction SilentlyConti
     Write-Host '  Pra ele conversar e ver a tela, instale o Claude Code e faca login:' -ForegroundColor Cyan
     Write-Host '    winget install Anthropic.ClaudeCode'
     Write-Host '    claude'
+    Write-Host '  Ou use outra IA (ChatGPT, Gemini, Ollama...): veja "Usar outra IA" no README.'
 }
 Write-Host ''
