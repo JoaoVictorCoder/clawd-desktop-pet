@@ -1,0 +1,34 @@
+# Compila o Clawd (Electron) pra Windows, Mac e Linux e publica nos Releases do GitHub.
+# Pra lancar uma versao: mude "version" em app/package.json, faca commit e
+#   git tag v0.2.0 && git push --tags
+# Os apps instalados se atualizam sozinhos a partir desse Release.
+
+name: release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci
+      - run: npx electron-builder --publish always
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

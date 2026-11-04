@@ -4,3 +4,7 @@ config.json
 clawd.log
 versao.json
 *.bak
+
+# app Electron
+app/node_modules/
+app/dist/

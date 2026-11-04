@@ -60,6 +60,23 @@ Tudo fica em `%LOCALAPPDATA%\Clawd`:
 - `persona.txt`: a personalidade usada nas conversas.
 - `config.json`: é criado quando você muda alguma opção no menu. Por exemplo, `"morte_min": 10` são os minutos com o PC parado até ele morrer, e `"atualizar": false` desliga a atualização automática.
 
+## Mac e Linux (versão nova, em teste)
+
+Na pasta `app/` tem uma versão do Clawd feita em Electron, que roda em **Windows, Mac e Linux**. Os instaladores ficam nos [Releases](https://github.com/JoaoVictorCoder/clawd-desktop-pet/releases): `.exe` pro Windows, `.dmg` pro Mac e `.AppImage` pro Linux.
+
+O que já funciona: andar, pular, ser carregado e arremessado, emoções, carinho, cutucar, conversar (Claude Code ou outra IA), espiar a tela, envelhecer e morrer com o PC parado, ícone na bandeja e atualização automática.
+
+Ainda falta (só na versão Windows por enquanto): subir nas janelas, as atividades e os 32 truques.
+
+Diferenças:
+- **Atualização:** no Windows e no Linux (AppImage) ele baixa a versão nova sozinho ao abrir e reinicia. No Mac, como o app não é assinado pela Apple, ele avisa e o menu ganha **Baixar versão nova**.
+- **Mac:** na primeira vez, clique com o botão direito no app → **Abrir** (o app não é assinado). Pra ele ver a tela, libere em Ajustes → Privacidade → Gravação de Tela.
+- **Linux:** precisa de um ambiente com transparência (GNOME, KDE etc.). No Wayland, o clique através da janela pode não funcionar em todo lugar.
+- **Espiar sozinho** vem desligado: aqui o print é da tela inteira, não só da janela ativa. Se alguma janela aberta tiver título de banco, senha ou aba anônima, ele não tira print.
+- As configurações (`config.json`), a memória e o log ficam na pasta de dados do app: `%APPDATA%\Clawd` no Windows, `~/Library/Application Support/Clawd` no Mac e `~/.config/Clawd` no Linux. Um `falas.json` ou `persona.txt` colocado lá substitui o padrão.
+
+Pra rodar do código: `cd app && npm install && npm start`. Pra lançar uma versão: mude `version` em `app/package.json`, faça commit e `git tag v0.2.0 && git push --tags`. O GitHub Actions compila pros três sistemas e publica o Release.
+
 ## Usar outra IA
 
 Por padrão ele usa o Claude Code. Pra usar outra IA, crie (ou edite) o `config.json` em `%LOCALAPPDATA%\Clawd` e reinicie o Clawd:

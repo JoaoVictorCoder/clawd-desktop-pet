@@ -109,6 +109,7 @@
   "bandeja": ["Tô aqui!", "Me chamou?", "Oi oi!"],
   "atualizando": ["Versão nova! Já volto!", "Vou me atualizar, segura aí!"],
   "atualizado": ["Já tô na versão mais nova!", "Tô atualizadinho!"],
+  "versao_nova": ["Tem versão nova! Baixa pelo meu menu!"],
   "sem_atualizacao": ["Não consegui ver se tem versão nova...", "Sem internet?"],
 
   "apps": {

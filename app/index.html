@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'">
+<title>Clawd</title>
+<style>
+  html, body { margin: 0; height: 100%; overflow: hidden; background: transparent; user-select: none; }
+  canvas { position: absolute; inset: 0; image-rendering: pixelated; }
+  #inp {
+    position: absolute; display: none; width: 300px; padding: 6px 8px 8px; box-sizing: border-box;
+    background: #232323; border-radius: 4px; box-shadow: 0 4px 16px rgba(0,0,0,.35);
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+  }
+  #inp label { display: block; color: #d97757; font-size: 12px; margin-bottom: 4px; }
+  #inp input {
+    width: 100%; box-sizing: border-box; padding: 4px 6px; font: 14px "Segoe UI", system-ui, -apple-system, sans-serif;
+    color: #fff; background: #373737; border: 1px solid #555; outline: none;
+  }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="inp"><label>Fale com o Clawd (Enter envia, Esc fecha)</label><input id="tb" maxlength="300"></div>
+<script src="pet.js"></script>
+</body>
+</html>

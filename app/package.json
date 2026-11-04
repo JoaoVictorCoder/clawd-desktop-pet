@@ -1,0 +1,35 @@
+{
+  "name": "clawd-companion",
+  "productName": "Clawd",
+  "version": "0.2.0",
+  "description": "Bichinho pixelado que mora na sua tela (Windows, Mac e Linux)",
+  "author": "JoaoVictorCoder",
+  "license": "MIT",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder"
+  },
+  "dependencies": {
+    "electron-updater": "6.3.9"
+  },
+  "devDependencies": {
+    "electron": "33.2.1",
+    "electron-builder": "25.1.8"
+  },
+  "build": {
+    "appId": "io.github.joaovictorcoder.clawd",
+    "productName": "Clawd",
+    "files": ["main.js", "preload.js", "index.html", "pet.js"],
+    "extraResources": [
+      { "from": "../falas.json", "to": "falas.json" },
+      { "from": "../persona.txt", "to": "persona.txt" }
+    ],
+    "icon": "build/icon.png",
+    "publish": [{ "provider": "github", "owner": "JoaoVictorCoder", "repo": "clawd-desktop-pet", "releaseType": "release" }],
+    "win": { "target": "nsis" },
+    "nsis": { "oneClick": true, "perMachine": false },
+    "mac": { "target": ["dmg", "zip"], "category": "public.app-category.entertainment" },
+    "linux": { "target": ["AppImage"], "category": "Game" }
+  }
+}
