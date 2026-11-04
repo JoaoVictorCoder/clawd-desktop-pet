@@ -1,44 +1,35 @@
 # Clawd Companion 🦀
 
-Um bichinho pixelado que mora em cima da sua barra de tarefas do Windows. Ele anda, pula nas suas janelas, tem emoções, conversa com você (usando o Claude Code ou outra IA: ChatGPT, Gemini, Ollama...), espia a tela, joga videogame junto, constrói casinhas na área de trabalho... e envelhece se você abandonar o PC.
+Um bichinho pixelado que mora em cima da sua barra de tarefas. Ele anda, tem emoções, conversa com você (usando o Claude Code ou outra IA: ChatGPT, Gemini, Ollama...), espia a tela, faz 32 truques... e envelhece se você abandonar o PC. Roda no **Windows, Mac e Linux**.
 
 > Projeto de fã, **não oficial**, sem nenhuma afiliação com a Anthropic.
 
 ## Instalação
 
-**Jeito rápido:** abra o PowerShell e cole:
+Baixe o instalador do seu sistema nos [Releases](https://github.com/JoaoVictorCoder/clawd-desktop-pet/releases/latest):
 
-```powershell
-irm https://raw.githubusercontent.com/JoaoVictorCoder/clawd-desktop-pet/main/install.ps1 | iex
-```
+- **Windows:** o `.exe`. O app não é assinado, então o Windows pode avisar: clique em **Mais informações → Executar assim mesmo**.
+- **Mac:** `.dmg`. Na primeira vez, clique com o botão direito no app → **Abrir**. Pra ele ver a tela, libere em Ajustes → Privacidade → Gravação de Tela.
+- **Linux:** `.AppImage` (dê permissão de execução). Precisa de um ambiente com transparência (GNOME, KDE etc.). No Wayland, o clique através da janela pode não funcionar em todo lugar.
 
-**Ou:** baixe o projeto (botão verde *Code → Download ZIP*), extraia e dê dois cliques em `instalar.bat`.
-
-O Clawd é instalado em `%LOCALAPPDATA%\Clawd`, ganha um atalho no menu Iniciar e passa a abrir junto com o Windows. Pra desinstalar, use o atalho **Desinstalar Clawd** no menu Iniciar.
+Ele abre junto com o sistema (dá pra desligar no menu) e se atualiza sozinho: no Windows e no Linux baixa a versão nova ao abrir e reinicia. No Mac, como o app não é assinado pela Apple, ele avisa e o menu ganha **Baixar versão nova**.
 
 ### Requisitos
 
-- Windows 10 ou 11. Não precisa instalar nada: ele usa o PowerShell que já vem no Windows.
-- **Opcional:** [Claude Code](https://docs.claude.com/claude-code), com login feito, pra ele conversar e ver a tela:
-  ```powershell
-  winget install Anthropic.ClaudeCode
-  claude
-  ```
-  Sem o Claude Code, ele funciona normalmente, só que usando falas prontas.
+- **Opcional:** [Claude Code](https://docs.claude.com/claude-code), com login feito, pra ele conversar e ver a tela. Sem ele, o Clawd funciona normalmente, só que usando falas prontas.
 - **Ou** qualquer outra IA: veja [Usar outra IA](#usar-outra-ia).
 
 ## O que ele faz
 
-- **Anda e explora:** caminha pela barra de tarefas, pula em cima das janelas e anda por elas. Se você arrastar a janela, ele vai junto. Se você fechar a janela, ele cai.
+- **Anda e explora:** caminha pela barra de tarefas, pula, cai, pode ser carregado e arremessado.
 - **Emoções:** fica feliz, apaixonado, triste, bravo, assustado, tonto, com sono... Tem energia e carência: dorme quando cansa e fica triste se você ignora ele.
 - **Conversa:** dê dois cliques nele pra conversar. Ele lembra das conversas anteriores.
-- **Espia a tela:** de vez em quando ele comenta o que você está fazendo (vídeo, código, jogo).
-- **Atividades espontâneas:** pega um controle quando você está jogando, abre um notebook quando você está programando, pesca em cima das janelas, constrói casinhas de blocos, joga bola, toma café, lê um livro.
-- **32 truques aleatórios:** bola de chiclete que estoura na cara, raio que deixa ele tostado, clone em cima da cabeça, jetpack, paraquedas do topo da tela, breakdance de ponta-cabeça, mágica do coelho, pintar um quadro, DJ, toc toc que racha a tela... Dá pra ver todos no menu **Truques** (ou **Surpresa!**).
+- **Espia a tela:** se você ligar **Espiar e comentar sozinho**, de vez em quando ele comenta o que você está fazendo. Vem desligado porque o print é da tela inteira; se alguma janela aberta tiver título de banco, senha ou aba anônima, ele não tira print.
+- **32 truques aleatórios:** bola de chiclete que estoura na cara, raio que deixa ele tostado, clone em cima da cabeça, jetpack, paraquedas do topo da tela, breakdance de ponta-cabeça, mágica do coelho, pintar um quadro, DJ, toc toc que racha a tela... Dá pra ver todos no menu **Truques**.
 - **Envelhece:** se o PC ficar parado, ele fica velhinho, morre, vira um fantasminha e uma lápide aparece. Quando você mexer no mouse, ele revive.
-- **Some sozinho** quando algum app entra em tela cheia.
-- **Ícone na bandeja** (perto do relógio): clique pra chamar ele, dois cliques pra conversar, botão direito pro menu. Pelo menu dá pra esconder o Clawd sem fechar.
-- **Se atualiza sozinho:** toda vez que abre, ele vê se tem versão nova aqui no GitHub e se atualiza. Sem internet, só abre normal. Dá pra procurar na hora em **Procurar atualização**, ou desligar em **Atualizar sozinho ao abrir**. Se você editou o `falas.json` ou o `persona.txt`, a sua versão é mantida.
+- **Ícone na bandeja** (perto do relógio): clique pra chamar ele, botão direito pro menu.
+
+Ainda não chegaram na versão nova (só na [versão antiga](#versão-antiga-powershell-só-windows)): subir e andar nas janelas e as atividades (jogar junto, notebook, pescar, casinhas...).
 
 ## Controles
 
@@ -48,38 +39,21 @@ O Clawd é instalado em `%LOCALAPPDATA%\Clawd`, ganha um atalho no menu Iniciar 
 | Dois cliques | Abre a conversa |
 | Arrastar e soltar | Carrega ele. Soltando com força, arremessa |
 | Passar o mouse em cima, de um lado pro outro | Carinho ❤️ |
-| Botão direito | Menu: atividades, opções, atualização, sair |
-| Ícone na bandeja | Clique chama ele, dois cliques conversa, botão direito abre o menu |
-| Clicar num bloco ou na bola | Quebra o bloco / chuta a bola |
+| Botão direito | Menu: truques, opções, atualização, sair |
 
 ## Personalizar
 
-Tudo fica em `%LOCALAPPDATA%\Clawd`:
+As configurações (`config.json`), a memória e o log ficam na pasta de dados do app: `%APPDATA%\Clawd` no Windows, `~/Library/Application Support/Clawd` no Mac e `~/.config/Clawd` no Linux. Um `falas.json` (todas as falas dele) ou `persona.txt` (a personalidade usada nas conversas) colocado lá substitui o padrão. Os originais estão na raiz deste repositório, pra servir de base.
 
-- `falas.json`: todas as falas dele. Pode editar à vontade.
-- `persona.txt`: a personalidade usada nas conversas.
-- `config.json`: é criado quando você muda alguma opção no menu. Por exemplo, `"morte_min": 10` são os minutos com o PC parado até ele morrer, e `"atualizar": false` desliga a atualização automática.
+## Rodar do código
 
-## Mac e Linux (versão nova, em teste)
+`cd app && npm install && npm start`. Se o Electron não abrir num clone novo, rode `npm install-scripts approve electron` e o `npm install` de novo.
 
-Na pasta `app/` tem uma versão do Clawd feita em Electron, que roda em **Windows, Mac e Linux**. Os instaladores ficam nos [Releases](https://github.com/JoaoVictorCoder/clawd-desktop-pet/releases): `.exe` pro Windows, `.dmg` pro Mac e `.AppImage` pro Linux.
-
-O que já funciona: andar, pular, ser carregado e arremessado, emoções, carinho, cutucar, conversar (Claude Code ou outra IA), espiar a tela, envelhecer e morrer com o PC parado, os 32 truques (menu **Truques**), ícone na bandeja e atualização automática.
-
-Ainda falta (só na versão Windows por enquanto): subir nas janelas e as atividades (jogar junto, notebook, pescar, casinhas...), que dependem de saber qual janela está aberta.
-
-Diferenças:
-- **Atualização:** no Windows e no Linux (AppImage) ele baixa a versão nova sozinho ao abrir e reinicia. No Mac, como o app não é assinado pela Apple, ele avisa e o menu ganha **Baixar versão nova**.
-- **Mac:** na primeira vez, clique com o botão direito no app → **Abrir** (o app não é assinado). Pra ele ver a tela, libere em Ajustes → Privacidade → Gravação de Tela.
-- **Linux:** precisa de um ambiente com transparência (GNOME, KDE etc.). No Wayland, o clique através da janela pode não funcionar em todo lugar.
-- **Espiar sozinho** vem desligado: aqui o print é da tela inteira, não só da janela ativa. Se alguma janela aberta tiver título de banco, senha ou aba anônima, ele não tira print.
-- As configurações (`config.json`), a memória e o log ficam na pasta de dados do app: `%APPDATA%\Clawd` no Windows, `~/Library/Application Support/Clawd` no Mac e `~/.config/Clawd` no Linux. Um `falas.json` ou `persona.txt` colocado lá substitui o padrão.
-
-Pra rodar do código: `cd app && npm install && npm start`. Pra lançar uma versão: mude `version` em `app/package.json`, faça commit e `git tag v0.2.0 && git push --tags`. O GitHub Actions compila pros três sistemas e publica o Release.
+Pra lançar uma versão: mude `version` em `app/package.json`, faça commit e `git tag v0.2.0 && git push --tags`. O GitHub Actions compila pros três sistemas e publica o Release, e os apps instalados se atualizam a partir dele.
 
 ## Usar outra IA
 
-Por padrão ele usa o Claude Code. Pra usar outra IA, crie (ou edite) o `config.json` em `%LOCALAPPDATA%\Clawd` e reinicie o Clawd:
+Por padrão ele usa o Claude Code. Pra usar outra IA, crie (ou edite) o `config.json` na pasta de dados (veja [Personalizar](#personalizar)) e reinicie o Clawd:
 
 ```json
 {
@@ -109,11 +83,23 @@ Com o Ollama, por exemplo: instale, rode `ollama pull gemma3` e use `{ "ia": "ol
 
 ## Privacidade
 
-- Quando você conversa com ele, ou quando ele espia a tela, ele manda **um print da janela ativa** e o título dela pra IA escolhida (por padrão o Claude, usando a sua conta do Claude Code). Com Ollama ou LM Studio, nada sai do seu PC. O print não é salvo em disco.
-- Ele nunca espia janelas cujo título indique senhas, bancos ou abas anônimas. Mas esse filtro olha só o título, então não é garantido.
-- Dá pra desligar isso no menu, desmarcando **Ver minha tela** e **Espiar e comentar sozinho**.
+- Quando você conversa com ele, ou quando ele espia a tela, ele manda **um print da tela** pra IA escolhida (por padrão o Claude, usando a sua conta do Claude Code). Com Ollama ou LM Studio, nada sai do seu PC. O print não é salvo em disco.
+- Ele não tira print se alguma janela aberta tiver título de senha, banco ou aba anônima. Mas esse filtro olha só os títulos, então não é garantido.
+- Dá pra desligar isso no menu, desmarcando **Ver minha tela nas conversas** e **Espiar e comentar sozinho**.
 - As conversas ficam salvas só no seu PC, em `memoria.json`. Pra apagar, use **Esquecer conversas** no menu.
+
+## Versão antiga (PowerShell, só Windows)
+
+A primeira versão do Clawd, feita em PowerShell, continua aqui e continua recebendo atualizações. Ela ainda tem coisas que a nova não tem: subir e andar nas janelas (e cair quando você fecha a janela) e as atividades espontâneas (pegar um controle quando você joga, abrir um notebook quando você programa, pescar, construir casinhas, jogar bola, tomar café, ler).
+
+Pra instalar, abra o PowerShell e cole:
+
+```powershell
+irm https://raw.githubusercontent.com/JoaoVictorCoder/clawd-desktop-pet/main/install.ps1 | iex
+```
+
+Ou baixe o projeto (*Code → Download ZIP*), extraia e dê dois cliques em `instalar.bat`. Ela fica em `%LOCALAPPDATA%\Clawd` (é lá que vão o `config.json`, as falas e o `clawd.log`), abre junto com o Windows e se atualiza sozinha ao abrir. Pra desinstalar, use o atalho **Desinstalar Clawd** no menu Iniciar. Se você tiver as duas instaladas, feche uma antes de abrir a outra.
 
 ---
 
-*English: a pixel desktop pet for Windows that walks on your taskbar, climbs windows, chats via Claude Code or any OpenAI-compatible API (OpenAI, Gemini, Ollama...), reacts to what you're doing, and has spontaneous activities. Install with the PowerShell one-liner above. Unofficial fan project, not affiliated with Anthropic.*
+*English: a pixel desktop pet for Windows, Mac and Linux that walks on your taskbar, chats via Claude Code or any OpenAI-compatible API (OpenAI, Gemini, Ollama...), reacts to what you're doing, and does 32 random tricks. Download it from Releases. Unofficial fan project, not affiliated with Anthropic.*
