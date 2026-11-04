@@ -348,11 +348,11 @@ $cfgPath = Join-Path $here 'config.json'
 # envelhecer = envelhece e morre com o PC parado; morte_min = minutos parado ate morrer
 # ia = qual IA usar nas conversas (claude, openai, gemini, ollama, lmstudio, openrouter, groq, deepseek ou outra)
 # ia_url / ia_chave / ia_modelo = endereco, chave e modelo da API; ia_imagem = manda o print pra IA
-$CFG = @{ ver = $true; espiar = $true; envelhecer = $true; morte_min = 10; ia = 'claude'; ia_url = ''; ia_chave = ''; ia_modelo = ''; ia_imagem = $true }
+$CFG = @{ ver = $true; espiar = $true; envelhecer = $true; morte_min = 10; ia = 'claude'; ia_url = ''; ia_chave = ''; ia_modelo = ''; ia_imagem = $true; atualizar = $true }
 if (Test-Path $cfgPath) {
     try {
         $j = Get-Content $cfgPath -Raw | ConvertFrom-Json
-        foreach ($k in 'ver', 'espiar', 'envelhecer', 'ia_imagem') { if ($null -ne $j.$k) { $CFG[$k] = [bool]$j.$k } }
+        foreach ($k in 'ver', 'espiar', 'envelhecer', 'ia_imagem', 'atualizar') { if ($null -ne $j.$k) { $CFG[$k] = [bool]$j.$k } }
         foreach ($k in 'ia', 'ia_url', 'ia_chave', 'ia_modelo') { if ($j.$k) { $CFG[$k] = [string]$j.$k } }
         if ($j.morte_min -gt 0) { $CFG.morte_min = [double]$j.morte_min }
     } catch {}
@@ -1166,8 +1166,72 @@ $menu.Items.Add($miEsp) | Out-Null
 $menu.Items.Add('Espiar agora').Add_Click({ if (-not $Chat.busy) { Start-Peek } }) | Out-Null
 $menu.Items.Add('-') | Out-Null
 $menu.Items.Add('Esquecer conversas').Add_Click({ $Chat.hist.Clear(); Remove-Item $memPath -ErrorAction SilentlyContinue; Say (Line 'esqueci') }) | Out-Null
+$menu.Items.Add('-') | Out-Null
+$miAway = New-Object System.Windows.Forms.ToolStripMenuItem 'Esconder o Clawd'
+$miAway.CheckOnClick = $true
+$miAway.Add_Click({ $S.away = $miAway.Checked })
+$menu.Items.Add($miAway) | Out-Null
+$menu.Items.Add("Procurar atualiza$([char]0xE7)$([char]0xE3)o").Add_Click({ Start-UpdateCheck }) | Out-Null
+$miUpd = New-Object System.Windows.Forms.ToolStripMenuItem 'Atualizar sozinho ao abrir'
+$miUpd.CheckOnClick = $true; $miUpd.Checked = $CFG.atualizar
+$miUpd.Add_Click({ $CFG.atualizar = $miUpd.Checked; Save-Config })
+$menu.Items.Add($miUpd) | Out-Null
 $menu.Items.Add('Sair').Add_Click({ $form.Close() }) | Out-Null
 $form.ContextMenuStrip = $menu
+
+# ---------- icone na bandeja (perto do relogio) ----------
+# desenha o proprio sprite em 1px e amplia sem borrar
+function New-TrayIcon {
+    $PX = 1
+    $small = New-Object System.Drawing.Bitmap 18, 18
+    $g = [System.Drawing.Graphics]::FromImage($small)
+    Draw-Pattern $g (Get-Sprite 'happy') 0 4
+    $g.Dispose()
+    $big = New-Object System.Drawing.Bitmap 32, 32
+    $g = [System.Drawing.Graphics]::FromImage($big)
+    $g.InterpolationMode = [System.Drawing.Drawing2D.InterpolationMode]::NearestNeighbor
+    $g.PixelOffsetMode = [System.Drawing.Drawing2D.PixelOffsetMode]::Half
+    $g.DrawImage($small, 0, 0, 32, 32)
+    $g.Dispose(); $small.Dispose()
+    [System.Drawing.Icon]::FromHandle($big.GetHicon())
+}
+$tray = New-Object System.Windows.Forms.NotifyIcon
+try { $tray.Icon = New-TrayIcon } catch { $tray.Icon = [System.Drawing.SystemIcons]::Application; Write-Log ("icone: " + $_) }
+$tray.Text = 'Clawd'
+$tray.ContextMenuStrip = $menu
+$tray.Add_MouseClick({
+    param($sender, $e)
+    if ($e.Button -ne 'Left') { return }
+    if ($S.away) { $S.away = $false; $miAway.Checked = $false }
+    if (Test-Alive) { Invoke-Hop; Say (Line 'bandeja') }
+})
+$tray.Add_MouseDoubleClick({ Show-Input })
+$tray.Visible = $true
+
+# ---------- atualizacao (a automatica roda no iniciar.vbs, antes de abrir) ----------
+$Upd = @{ proc = $null; restartAt = 0 }
+function Start-UpdateCheck {
+    if ($Upd.proc -or $Upd.restartAt) { return }
+    $psi = New-Object System.Diagnostics.ProcessStartInfo
+    $psi.FileName = 'powershell.exe'
+    $psi.Arguments = '-NoProfile -ExecutionPolicy Bypass -File "' + (Join-Path $here 'atualizar.ps1') + '" -Checar'
+    $psi.UseShellExecute = $false; $psi.CreateNoWindow = $true
+    try { $Upd.proc = [System.Diagnostics.Process]::Start($psi); Say '...' 2 } catch { Write-Log ("atualizar: " + $_); Say (Line 'sem_atualizacao') 2 }
+}
+function Step-Update {
+    if ($Upd.restartAt -and $S.tick -ge $Upd.restartAt -and -not $Chat.busy) {
+        # o atualizar.ps1 baixa a versao nova e abre o Clawd de novo
+        Start-Process powershell.exe -WindowStyle Hidden -ArgumentList ('-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "' + (Join-Path $here 'atualizar.ps1') + '" -Reabrir')
+        $form.Close()
+        return
+    }
+    if (-not $Upd.proc -or -not $Upd.proc.HasExited) { return }
+    $code = $Upd.proc.ExitCode; $Upd.proc = $null
+    $Balloon.prio = 0
+    if ($code -eq 10) { Say (Line 'atualizando') 3; Set-Mood 'excited' 100; $Upd.restartAt = $S.tick + 90 }
+    elseif ($code -eq 0) { Say (Line 'atualizado') 2; Set-Mood 'happy' 60 }
+    else { Say (Line 'sem_atualizacao') 2 }
+}
 
 . (Join-Path $here 'atividades.ps1')
 . (Join-Path $here 'truques.ps1')
@@ -1261,7 +1325,7 @@ function Step-Tick {
         $fg = [IntPtr]::Zero
         $info = [Win]::FgInfo([ref]$fg)
         $scr = [System.Windows.Forms.Screen]::FromPoint((New-Object System.Drawing.Point ([int]$cx), ([int]$S.sy))).Bounds
-        $full = [Win]::IsFullscreen($fg, $scr.Left, $scr.Top, $scr.Right, $scr.Bottom)
+        $full = $S.away -or [Win]::IsFullscreen($fg, $scr.Left, $scr.Top, $scr.Right, $scr.Bottom)   # away = escondido pelo menu
         if ($full -ne $S.hidden) {
             $S.hidden = $full
             $form.Opacity = $(if ($full) { 0 } else { 1 })
@@ -1390,6 +1454,7 @@ function Step-Tick {
     }
 
     Step-Chat
+    Step-Update
     Step-Particles
     Step-Toys
 
@@ -1429,7 +1494,8 @@ $form.Add_Shown({
 
 $form.Add_FormClosed({
     $timer.Stop()
-    if ($Chat.busy) { try { $Chat.proc.Kill() } catch {} }
+    $tray.Visible = $false; $tray.Dispose()
+    if ($Chat.busy -and $Chat.proc) { try { $Chat.proc.Kill() } catch {} }
     [System.Windows.Forms.Application]::Exit()
 })
 

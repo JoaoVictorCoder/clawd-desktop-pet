@@ -10,7 +10,8 @@ $ErrorActionPreference = 'Stop'
 $Repo = 'JoaoVictorCoder/clawd-desktop-pet'
 $Branch = 'main'
 $dest = Join-Path $env:LOCALAPPDATA 'Clawd'
-$files = 'clawd.ps1', 'atividades.ps1', 'truques.ps1', 'falas.json', 'persona.txt', 'iniciar.vbs', 'desinstalar.ps1'
+# arquivos do repo que nao fazem parte da instalacao (mesma lista do atualizar.ps1)
+$SKIP = 'README.md', 'LICENSE', '.gitignore', 'instalar.bat', 'install.ps1', 'config.json', 'memoria.json', 'versao.json', 'clawd.log'
 
 Write-Host ''
 Write-Host '  Instalando o Clawd...' -ForegroundColor Yellow
@@ -21,6 +22,7 @@ Get-CimInstance Win32_Process -Filter "Name='powershell.exe'" |
     ForEach-Object { Stop-Process -Id $_.ProcessId -Force }
 
 $src = $PSScriptRoot
+$sha = ''   # versao baixada; vazio = copia local, o atualizar.ps1 acerta na primeira vez que abrir
 if (-not $src -or -not (Test-Path (Join-Path $src 'clawd.ps1'))) {
     # rodando via "irm | iex": baixa o projeto do GitHub
     $tmp = Join-Path $env:TEMP ('clawd-' + [guid]::NewGuid())
@@ -28,14 +30,24 @@ if (-not $src -or -not (Test-Path (Join-Path $src 'clawd.ps1'))) {
     $zip = Join-Path $tmp 'clawd.zip'
     [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
     Write-Host "  Baixando de github.com/$Repo..."
-    Invoke-WebRequest "https://github.com/$Repo/archive/refs/heads/$Branch.zip" -OutFile $zip -UseBasicParsing
+    $ref = "refs/heads/$Branch"
+    try {
+        $sha = ([string](Invoke-RestMethod "https://api.github.com/repos/$Repo/commits/$Branch" -Headers @{ Accept = 'application/vnd.github.sha'; 'User-Agent' = 'clawd-desktop-pet' } -UseBasicParsing)).Trim()
+        if ($sha -match '^[0-9a-f]{40}$') { $ref = $sha } else { $sha = '' }
+    } catch { $sha = '' }
+    Invoke-WebRequest "https://github.com/$Repo/archive/$ref.zip" -OutFile $zip -UseBasicParsing
     Expand-Archive $zip $tmp
     $src = (Get-ChildItem $tmp -Directory | Select-Object -First 1).FullName
 }
 
 # copia os arquivos (config e memoria de quem ja usava ficam intactas)
 New-Item -ItemType Directory -Force $dest | Out-Null
-foreach ($f in $files) { Copy-Item (Join-Path $src $f) $dest -Force }
+$hashes = @{}
+foreach ($f in @(Get-ChildItem $src -File | Where-Object { $SKIP -notcontains $_.Name })) {
+    Copy-Item $f.FullName $dest -Force
+    $hashes[$f.Name] = (Get-FileHash (Join-Path $dest $f.Name) -Algorithm SHA256).Hash
+}
+@{ sha = $sha; hashes = $hashes } | ConvertTo-Json | Set-Content -Path (Join-Path $dest 'versao.json') -Encoding UTF8
 Get-ChildItem $dest | Unblock-File
 
 # atalhos: menu Iniciar (abrir e desinstalar) e inicializacao do Windows

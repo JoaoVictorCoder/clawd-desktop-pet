@@ -37,6 +37,8 @@ O Clawd é instalado em `%LOCALAPPDATA%\Clawd`, ganha um atalho no menu Iniciar 
 - **32 truques aleatórios:** bola de chiclete que estoura na cara, raio que deixa ele tostado, clone em cima da cabeça, jetpack, paraquedas do topo da tela, breakdance de ponta-cabeça, mágica do coelho, pintar um quadro, DJ, toc toc que racha a tela... Dá pra ver todos no menu **Truques** (ou **Surpresa!**).
 - **Envelhece:** se o PC ficar parado, ele fica velhinho, morre, vira um fantasminha e uma lápide aparece. Quando você mexer no mouse, ele revive.
 - **Some sozinho** quando algum app entra em tela cheia.
+- **Ícone na bandeja** (perto do relógio): clique pra chamar ele, dois cliques pra conversar, botão direito pro menu. Pelo menu dá pra esconder o Clawd sem fechar.
+- **Se atualiza sozinho:** toda vez que abre, ele vê se tem versão nova aqui no GitHub e se atualiza. Sem internet, só abre normal. Dá pra procurar na hora em **Procurar atualização**, ou desligar em **Atualizar sozinho ao abrir**. Se você editou o `falas.json` ou o `persona.txt`, a sua versão é mantida.
 
 ## Controles
 
@@ -46,7 +48,8 @@ O Clawd é instalado em `%LOCALAPPDATA%\Clawd`, ganha um atalho no menu Iniciar 
 | Dois cliques | Abre a conversa |
 | Arrastar e soltar | Carrega ele. Soltando com força, arremessa |
 | Passar o mouse em cima, de um lado pro outro | Carinho ❤️ |
-| Botão direito | Menu: atividades, opções, sair |
+| Botão direito | Menu: atividades, opções, atualização, sair |
+| Ícone na bandeja | Clique chama ele, dois cliques conversa, botão direito abre o menu |
 | Clicar num bloco ou na bola | Quebra o bloco / chuta a bola |
 
 ## Personalizar
@@ -55,7 +58,7 @@ Tudo fica em `%LOCALAPPDATA%\Clawd`:
 
 - `falas.json`: todas as falas dele. Pode editar à vontade.
 - `persona.txt`: a personalidade usada nas conversas.
-- `config.json`: é criado quando você muda alguma opção no menu. Por exemplo, `"morte_min": 10` são os minutos com o PC parado até ele morrer.
+- `config.json`: é criado quando você muda alguma opção no menu. Por exemplo, `"morte_min": 10` são os minutos com o PC parado até ele morrer, e `"atualizar": false` desliga a atualização automática.
 
 ## Usar outra IA
 

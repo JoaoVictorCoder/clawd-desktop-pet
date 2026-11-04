@@ -106,6 +106,10 @@
   "sem_claude_instalado": ["Instala o Claude Code (ou configura outra IA) pra eu conversar!"],
   "sem_claude": ["Deu tilt...", "Não consegui pensar."],
   "esqueci": ["Ué... esqueci tudo!"],
+  "bandeja": ["Tô aqui!", "Me chamou?", "Oi oi!"],
+  "atualizando": ["Versão nova! Já volto!", "Vou me atualizar, segura aí!"],
+  "atualizado": ["Já tô na versão mais nova!", "Tô atualizadinho!"],
+  "sem_atualizacao": ["Não consegui ver se tem versão nova...", "Sem internet?"],
 
   "apps": {
     "youtube": ["O que tá vendo?", "Vídeo de gatinho?"],

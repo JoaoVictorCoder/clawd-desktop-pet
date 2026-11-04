@@ -2,3 +2,5 @@
 memoria.json
 config.json
 clawd.log
+versao.json
+*.bak
