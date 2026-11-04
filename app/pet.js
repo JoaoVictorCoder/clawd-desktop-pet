@@ -155,6 +155,7 @@ function Update_Bubble() {
   if (!Balloon.active) return
   let cx = S.sx + SW / 2
   let top = S.sy - 2 * PX
+  if (S.state === 'trick' && S.trk && TRK[S.trk.name].above) top = S.sy - (TRK[S.trk.name].above + 1) * PX   // acima da nuvem, do clone...
   if (S.ghostOn) { cx = S.sx + (S.gx - OX + 5) * PX; top = S.sy + (S.gy - OY - 1) * PX }   // fala o fantasminha
   const h = Balloon.boxH + 2 * BB
   Balloon.x = Math.round(clamp(cx - Balloon.w / 2, 4, area.w - Balloon.w - 4))
@@ -289,6 +290,7 @@ function Get_Expr() {
   if (S.state === 'sleep') return 'sleep'
   if (S.drag && S.moved) return S.dragMood
   if (S.moodT > 0) return S.mood
+  if (S.state === 'trick' && S.trk && S.trk.expr) return S.trk.expr
   if (Chat.busy) return 'thinking'
   if (S.energy < 20) return 'sleepy'
   if (S.social < 25) return 'sad'
@@ -387,16 +389,20 @@ function Get_Sprite(force) {
     grid[3][hc] = 'C'
   }
 
+  const trick = S.state === 'trick' ? S.trk : null
+  if (trick) Set_TrickPose(grid)
+
   let lifted = []
-  if (!held && ['walk', 'run', 'seek', 'dance'].includes(S.state)) lifted = S.frame === 0 ? [5, 14] : [3, 12]
+  if (!held && (['walk', 'run', 'seek', 'dance'].includes(S.state) || (trick && trick.walk))) lifted = S.frame === 0 ? [5, 14] : [3, 12]
   for (const c of [3, 5, 12, 14]) {
     grid[8][c] = 'O'
     if (!lifted.includes(c)) grid[9][c] = 'O'
   }
-  if (S.state === 'sleep' || S.state === 'crouch' || S.squash > 0 || S.age >= 0.6) {
+  if (S.state === 'sleep' || S.state === 'crouch' || S.squash > 0 || S.age >= 0.6 || (trick && trick.sit)) {
     for (let r = ROWS - 1; r > 0; r--) grid[r] = grid[r - 1]
     grid[0] = blankRow()
   }
+  if (trick && trick.flip) grid.reverse()   // de ponta-cabeca
   return grid
 }
 
@@ -416,10 +422,12 @@ function Draw() {
   G.clearRect(0, 0, area.w, area.h)
   const fx = Math.round(S.sx - OX * PX), fy = Math.round(S.sy - OY * PX)
   const grid = Get_Sprite()
-  const body = AGEBR[Math.round(S.age * 10)]
+  const trick = S.state === 'trick' ? S.trk : null
+  const body = trick && trick.dark ? BR.E : AGEBR[Math.round(S.age * 10)]   // tostado pelo raio
   let shx = OX
   if ((S.state === 'dead' && S.deadT < 30) || (S.state === 'revive' && S.deadT >= 25)) shx += (S.tick % 2) * 2 - 1   // tremedeira
-  for (let r = 0; r < ROWS; r++) {
+  const nrows = trick && trick.hide ? 0 : ROWS
+  for (let r = 0; r < nrows; r++) {
     for (let c = 0; c < COLS; c++) {
       const ch = grid[r][c]
       if (ch === '.') continue
@@ -427,6 +435,7 @@ function Draw() {
       G.fillRect(fx + (shx + c) * PX, fy + (OY + r) * PX, PX, PX)
     }
   }
+  Draw_TrickProps(fx, fy, grid)
   for (const p of Parts) Draw_Pattern(G, PAT[p.k], p.x, p.y, fx, fy)
   if (S.ghostOn) Draw_Pattern(G, PAT.ghost, S.gx, S.gy, fx, fy)
   if (Get_Expr() === 'dizzy') {
@@ -464,6 +473,7 @@ function Invoke_Hop() { Invoke_Jump(-11); S.vx = 0; if (S.state !== 'dance') Set
 function Pick_State() {
   if (S.age > 0.5) { Set_State(rnd(100) < 55 ? 'walk' : 'idle'); return }   // velhinho nao pula
   if (S.energy < 15) { Set_State('sleep'); Say(Line('sono')); return }
+  if (Try_StartTrick()) return
   if (S.social < 25 && rnd(100) < 45) {
     Set_State('seek')
     if (rnd(2) === 0) Say(Line('solitario'))
@@ -506,6 +516,7 @@ function Step_Behavior() {
       if (S.tick % 24 === 0) Invoke_Jump(-4)
       break
     case 'wave': if (S.tick % 7 === 0) S.frame = 1 - S.frame; break
+    case 'trick': return   // o truque roda no Step_Trick
     case 'sleep':
       if (S.energy >= 100) { Set_State('idle'); Set_Mood('happy', 60); Say(Line('acordou')) }
       break
@@ -584,7 +595,7 @@ addEventListener('mousemove', e => {
   S.lastX = x; S.lastY = y
   if (!S.moved && Math.abs(x - S.downX) + Math.abs(y - S.downY) > 4) {
     S.moved = true
-    if (S.state === 'sleep') Set_State('idle')
+    if (S.state === 'sleep' || S.state === 'trick') { S.trk = null; Set_State('idle') }
     if (rnd(100) < 45) Say(Line('carregado'))
   }
   if (S.moved) { S.sx = x - S.offX; S.sy = y - S.offY; S.vx = 0; S.vy = 0; Update_Bubble() }
@@ -666,6 +677,7 @@ function Step_Tick() {
   if (S.squash > 0) S.squash--
   if (S.pendingClick > 0) { S.pendingClick--; if (S.pendingClick === 0) Invoke_Poke() }
   Step_Aging()
+  if (S.state === 'trick' && !S.drag) Step_Trick()
 
   // necessidades
   if (t % 100 === 0) {
@@ -696,7 +708,8 @@ function Step_Tick() {
   }
 
   // para onde olhar
-  if (['walk', 'run', 'seek'].includes(S.state)) { S.look = S.dir; S.lookY = 0 }
+  if (S.state === 'trick' && S.trk && S.trk.look !== null) { S.look = S.trk.look; S.lookY = 0 }
+  else if (['walk', 'run', 'seek'].includes(S.state)) { S.look = S.dir; S.lookY = 0 }
   else {
     const dx = cursor.x - (S.sx + SW / 2), dy = cursor.y - (S.sy + SH / 2)
     if (Math.abs(dx) < 600 && Math.abs(dy) < 500) {
@@ -755,6 +768,7 @@ window.clawd.onAction((a, v) => {
     case 'dance': if (Test_Alive()) { Set_State('dance'); Set_Mood('happy', 100) } break
     case 'sleep': if (Test_Alive()) Set_State('sleep'); break
     case 'peek': Start_Peek(); break
+    case 'trick': Start_Trick(v === '*' ? pick(Object.keys(TRK)) : v); break
     case 'forget': Chat.hist = []; Say(Line('esqueci')); break
     case 'config': CFG = v; break
     case 'called': if (Test_Alive()) { Invoke_Hop(); Say(Line('bandeja')) } break
@@ -780,15 +794,17 @@ function fitCanvas() {
 }
 addEventListener('resize', fitCanvas)
 
-window.clawd.init().then(d => {
+// espera a pagina inteira (o truques.js carrega depois deste arquivo)
+addEventListener('DOMContentLoaded', () => window.clawd.init().then(d => {
   Falas = d.falas; CFG = d.cfg; hasAI = d.hasAI; aiImg = d.aiImg
   Chat.hist = Array.isArray(d.hist) ? d.hist.filter(h => h && h.r && h.t) : []
   fitCanvas()
   S.sx = rnd(Math.max(1, area.w - SW)); S.sy = area.h - SH
   Make_TrayIcons()
+  window.clawd.tricks(Trick_Menu())
   setInterval(() => {
     try { Step_Tick() } catch (e) {
       if (S.tick - S.lastErr > 100) { S.lastErr = S.tick; window.clawd.log(String(e && e.stack || e)) }
     }
   }, 30)
-})
+}))

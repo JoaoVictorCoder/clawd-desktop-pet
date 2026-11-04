@@ -204,11 +204,18 @@ function pump() {
 // ---------- menu e bandeja ----------
 const send = (a, v) => win && win.webContents.send('action', a, v)
 let updateURL = null
+let tricks = []   // [nome, rotulo], vem do truques.js
+ipcMain.on('tricks', (_e, list) => { tricks = list; if (process.platform === 'linux' && tray) tray.setContextMenu(buildMenu()) })
 
 function buildMenu() {
   const toggle = (label, key) => ({ label, type: 'checkbox', checked: !!CFG[key], click: i => { CFG[key] = i.checked; saveConfig(); send('config', CFG) } })
   const items = [
     { label: 'Conversar', click: () => send('chat') },
+    { label: 'Truques', submenu: [
+      { label: 'Surpresa!', click: () => send('trick', '*') },
+      { type: 'separator' },
+      ...tricks.map(([name, label]) => ({ label, click: () => send('trick', name) }))
+    ] },
     { label: 'Pular', click: () => send('hop') },
     { label: 'Dançar', click: () => send('dance') },
     { label: 'Dormir', click: () => send('sleep') },
@@ -295,5 +302,7 @@ app.whenReady().then(() => {
   createWindow()
   setInterval(pump, 33)
   if (CFG.atualizar) setTimeout(() => checkUpdate(false), 5000)
+  // pra testar: CLAWD_TRUQUE=chuva npm start
+  if (process.env.CLAWD_TRUQUE) setTimeout(() => send('trick', process.env.CLAWD_TRUQUE), 3000)
 })
 app.on('window-all-closed', () => app.quit())

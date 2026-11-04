@@ -12,6 +12,7 @@ contextBridge.exposeInMainWorld('clawd', {
   blurInput: () => ipcRenderer.send('blur-input'),
   menu: () => ipcRenderer.send('menu'),
   trayIcon: (small, big) => ipcRenderer.send('tray-icon', small, big),
+  tricks: list => ipcRenderer.send('tricks', list),
   onPump: f => ipcRenderer.on('pump', (_e, p) => f(p)),
   onArea: f => ipcRenderer.on('area', (_e, a) => f(a)),
   onAction: f => ipcRenderer.on('action', (_e, a, v) => f(a, v))

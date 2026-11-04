@@ -64,9 +64,9 @@ Tudo fica em `%LOCALAPPDATA%\Clawd`:
 
 Na pasta `app/` tem uma versão do Clawd feita em Electron, que roda em **Windows, Mac e Linux**. Os instaladores ficam nos [Releases](https://github.com/JoaoVictorCoder/clawd-desktop-pet/releases): `.exe` pro Windows, `.dmg` pro Mac e `.AppImage` pro Linux.
 
-O que já funciona: andar, pular, ser carregado e arremessado, emoções, carinho, cutucar, conversar (Claude Code ou outra IA), espiar a tela, envelhecer e morrer com o PC parado, ícone na bandeja e atualização automática.
+O que já funciona: andar, pular, ser carregado e arremessado, emoções, carinho, cutucar, conversar (Claude Code ou outra IA), espiar a tela, envelhecer e morrer com o PC parado, os 32 truques (menu **Truques**), ícone na bandeja e atualização automática.
 
-Ainda falta (só na versão Windows por enquanto): subir nas janelas, as atividades e os 32 truques.
+Ainda falta (só na versão Windows por enquanto): subir nas janelas e as atividades (jogar junto, notebook, pescar, casinhas...), que dependem de saber qual janela está aberta.
 
 Diferenças:
 - **Atualização:** no Windows e no Linux (AppImage) ele baixa a versão nova sozinho ao abrir e reinicia. No Mac, como o app não é assinado pela Apple, ele avisa e o menu ganha **Baixar versão nova**.

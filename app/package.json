@@ -20,7 +20,7 @@
   "build": {
     "appId": "io.github.joaovictorcoder.clawd",
     "productName": "Clawd",
-    "files": ["main.js", "preload.js", "index.html", "pet.js"],
+    "files": ["main.js", "preload.js", "index.html", "pet.js", "truques.js"],
     "extraResources": [
       { "from": "../falas.json", "to": "falas.json" },
       { "from": "../persona.txt", "to": "persona.txt" }
